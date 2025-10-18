@@ -1,15 +1,6 @@
-import ClerkProviderWithRoutes from "./auth/ClerkProviderWithRoutes.jsx";
-import { Routes, Route } from "react-router-dom";
-import { AuthenticationPage } from "./auth/AuthenticationPage.jsx";
-import Layout from "./app/dashboard/layout.jsx";
-import DashboardHome from "./app/dashboard/page.jsx";
-import ChallengeGenerator from "./app/dashboard/challenges/page.jsx";
-import RoadmapsPage from "./app/dashboard/roadmaps/page.jsx";
-import ProgressPage from "./app/dashboard/progress/page.jsx";
-import ProfilePage from "./app/dashboard/profile/page.jsx";
-import "./App.css";
-
 import { Link } from "react-router-dom";
+import { Button } from "../components/ui/button";
+import { Card, CardHeader, CardTitle } from "../components/ui/card";
 import {
   ArrowRight,
   Target,
@@ -18,53 +9,25 @@ import {
   Zap,
   BookOpen,
 } from "lucide-react";
-import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 
-const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-function LandingPage() {
+export default function LandingPage() {
   return (
     <div className="min-vh-100 bg-light">
       {/* Navigation */}
       <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
         <div className="container-fluid">
-          <Link
-            to="/"
-            className="navbar-brand d-flex align-items-center text-decoration-none"
-          >
+          <div className="d-flex align-items-center">
             <Target className="text-primary me-2" size={24} />
             <span className="fw-bold text-dark">CareerPath</span>
-          </Link>
+          </div>
 
           <div className="d-flex align-items-center gap-2">
-            {CLERK_PUBLISHABLE_KEY ? (
-              <>
-                <SignedOut>
-                  <Link to="/sign-in" className="btn btn-outline-primary me-2">
-                    Sign In
-                  </Link>
-                  <Link to="/sign-up" className="btn btn-primary">
-                    Get Started
-                  </Link>
-                </SignedOut>
-                <SignedIn>
-                  <Link to="/dashboard" className="btn btn-primary me-2">
-                    Dashboard
-                  </Link>
-                  <UserButton afterSignOutUrl="/" />
-                </SignedIn>
-              </>
-            ) : (
-              // Fallback links when Clerk is not configured in dev
-              <>
-                <Link to="/sign-in" className="btn btn-outline-primary me-2">
-                  Sign In
-                </Link>
-                <Link to="/sign-up" className="btn btn-primary">
-                  Get Started
-                </Link>
-              </>
-            )}
+            <Link to="/sign-in" className="btn btn-outline-primary me-2">
+              Sign In
+            </Link>
+            <Link to="/sign-up" className="btn btn-primary">
+              Get Started
+            </Link>
           </div>
         </div>
       </nav>
@@ -82,39 +45,20 @@ function LandingPage() {
               guidance.
             </p>
             <div className="d-flex flex-wrap gap-3">
-              {CLERK_PUBLISHABLE_KEY ? (
-                <>
-                  <SignedOut>
-                    <Link to="/sign-up" className="btn btn-primary btn-lg">
-                      Explore Roadmaps <ArrowRight className="ms-2" size={16} />
-                    </Link>
-                    <button className="btn btn-outline-secondary btn-lg">
-                      View Demo
-                    </button>
-                  </SignedOut>
-                  <SignedIn>
-                    <Link to="/dashboard" className="btn btn-primary btn-lg">
-                      Go to Dashboard <ArrowRight className="ms-2" size={16} />
-                    </Link>
-                  </SignedIn>
-                </>
-              ) : (
-                <>
-                  <Link to="/sign-up" className="btn btn-primary btn-lg">
-                    Explore Roadmaps <ArrowRight className="ms-2" size={16} />
-                  </Link>
-                  <button className="btn btn-outline-secondary btn-lg">
-                    View Demo
-                  </button>
-                </>
-              )}
+              <Link to="/sign-up" className="btn btn-primary btn-lg">
+                Explore Roadmaps <ArrowRight className="ms-2" size={16} />
+              </Link>
+              <button className="btn btn-outline-secondary btn-lg">
+                View Demo
+              </button>
             </div>
           </div>
+
           <div className="col-lg-6">
             <div className="card shadow-lg border-0 p-4">
               <div className="card-body">
                 <div className="d-flex flex-column gap-3">
-                  <div className="d-flex align-items-center gap-3 p-3 bg-success bg-opacity-10 border border-success border-opacity-25 rounded">
+                  <div className="d-flex align-items-center gap-3 p-3 bg-success bg-opacity-10 border border-success rounded">
                     <div
                       className="d-flex align-items-center justify-content-center bg-success rounded-circle"
                       style={{ width: "40px", height: "40px" }}
@@ -126,7 +70,8 @@ function LandingPage() {
                       <div className="text-muted small">85% Complete</div>
                     </div>
                   </div>
-                  <div className="d-flex align-items-center gap-3 p-3 bg-warning bg-opacity-10 border border-warning border-opacity-25 rounded">
+
+                  <div className="d-flex align-items-center gap-3 p-3 bg-warning bg-opacity-10 border border-warning rounded">
                     <div
                       className="d-flex align-items-center justify-content-center bg-warning rounded-circle"
                       style={{ width: "40px", height: "40px" }}
@@ -138,6 +83,7 @@ function LandingPage() {
                       <div className="text-muted small">In Progress</div>
                     </div>
                   </div>
+
                   <div className="d-flex align-items-center gap-3 p-3 bg-light border rounded opacity-50">
                     <div
                       className="d-flex align-items-center justify-content-center bg-secondary rounded-circle"
@@ -265,24 +211,9 @@ function LandingPage() {
               Join thousands of professionals advancing their careers with
               structured guidance and interactive learning.
             </p>
-            {CLERK_PUBLISHABLE_KEY ? (
-              <>
-                <SignedOut>
-                  <Link to="/sign-up" className="btn btn-light btn-lg">
-                    Get Started Free <ArrowRight className="ms-2" size={16} />
-                  </Link>
-                </SignedOut>
-                <SignedIn>
-                  <Link to="/dashboard" className="btn btn-light btn-lg">
-                    Go to Dashboard <ArrowRight className="ms-2" size={16} />
-                  </Link>
-                </SignedIn>
-              </>
-            ) : (
-              <Link to="/sign-up" className="btn btn-light btn-lg">
-                Get Started Free <ArrowRight className="ms-2" size={16} />
-              </Link>
-            )}
+            <Link to="/sign-up" className="btn btn-light btn-lg">
+              Get Started Free <ArrowRight className="ms-2" size={16} />
+            </Link>
           </div>
         </div>
       </section>
@@ -308,28 +239,3 @@ function LandingPage() {
     </div>
   );
 }
-
-function App() {
-  return (
-    <ClerkProviderWithRoutes>
-      <Routes>
-        {CLERK_PUBLISHABLE_KEY && (
-          <>
-            <Route path="/sign-in/*" element={<AuthenticationPage />} />
-            <Route path="/sign-up/*" element={<AuthenticationPage />} />
-          </>
-        )}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/dashboard" element={<Layout />}>
-          <Route index element={<DashboardHome />} />
-          <Route path="challenges" element={<ChallengeGenerator />} />
-          <Route path="roadmaps" element={<RoadmapsPage />} />
-          <Route path="progress" element={<ProgressPage />} />
-          <Route path="profile" element={<ProfilePage />} />
-        </Route>
-      </Routes>
-    </ClerkProviderWithRoutes>
-  );
-}
-
-export default App;
