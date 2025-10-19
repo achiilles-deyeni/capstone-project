@@ -1,0 +1,50 @@
+[
+  {
+    "id": "frontend",
+    "title": "Frontend Developer",
+    "slug": "frontend",
+    "summary": "Master modern web development with React, TypeScript and modern tooling.",
+    "source": "https://roadmap.sh/frontend",
+    "doc": "docs/roadmaps/frontend.md"
+  },
+  {
+    "id": "backend",
+    "title": "Backend Developer",
+    "slug": "backend",
+    "summary": "Build scalable server-side systems, APIs and learn data modelling.",
+    "source": "https://roadmap.sh/backend",
+    "doc": "docs/roadmaps/backend.md"
+  },
+  {
+    "id": "full-stack",
+    "title": "Full Stack Developer",
+    "slug": "full-stack",
+    "summary": "Combine frontend and backend skills to ship full applications.",
+    "source": "https://roadmap.sh/full-stack",
+    "doc": "docs/roadmaps/full-stack.md"
+  },
+  {
+    "id": "devops",
+    "title": "DevOps Engineer",
+    "slug": "devops",
+    "summary": "Automate infrastructure, CI/CD, container orchestration and monitoring.",
+    "source": "https://roadmap.sh/devops",
+    "doc": "docs/roadmaps/devops.md"
+  },
+  {
+    "id": "ai-data-scientist",
+    "title": "AI & Data Scientist",
+    "slug": "ai-data-scientist",
+    "summary": "Mathematics, ML fundamentals, tools and model deployment.",
+    "source": "https://roadmap.sh/ai-data-scientist",
+    "doc": "docs/roadmaps/ai-data-scientist.md"
+  },
+  {
+    "id": "mobile",
+    "title": "Mobile Developer (Android)",
+    "slug": "mobile",
+    "summary": "Android development fundamentals, Jetpack, and app distribution.",
+    "source": "https://roadmap.sh/android",
+    "doc": "docs/roadmaps/mobile.md"
+  }
+]

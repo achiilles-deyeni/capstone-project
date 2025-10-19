@@ -2,6 +2,10 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables from .env if present
+load_dotenv()
 
 # Try to import Clerk SDK; if it's not installed, continue without it.
 try:
@@ -41,3 +45,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register routers
+try:
+    from .routes.roadmaps import router as roadmaps_router
+    app.include_router(roadmaps_router)
+except Exception:
+    logging.getLogger(__name__).warning("Failed to include roadmaps router")
+
+try:
+    from .routes.users import router as users_router
+    app.include_router(users_router)
+except Exception:
+    logging.getLogger(__name__).warning("Failed to include users router")
