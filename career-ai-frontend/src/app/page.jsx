@@ -9,6 +9,7 @@ import {
   Zap,
   BookOpen,
 } from "lucide-react";
+import AIWidget from "@/components/AIWidget";
 
 export default function LandingPage() {
   return (
@@ -58,6 +59,7 @@ export default function LandingPage() {
             <div className="card shadow-lg border-0 p-4">
               <div className="card-body">
                 <div className="d-flex flex-column gap-3">
+                  <AIWidget />
                   <div className="d-flex align-items-center gap-3 p-3 bg-success bg-opacity-10 border border-success rounded">
                     <div
                       className="d-flex align-items-center justify-content-center bg-success rounded-circle"

@@ -7,6 +7,8 @@ import ChallengeGenerator from "./app/dashboard/challenges/page.jsx";
 import RoadmapsPage from "./app/dashboard/roadmaps/page.jsx";
 import ProgressPage from "./app/dashboard/progress/page.jsx";
 import ProfilePage from "./app/dashboard/profile/page.jsx";
+import RoadmapDetail from "./app/dashboard/roadmaps/[id]/page.jsx";
+import AIChatPage from "./app/dashboard/ai-chat/page.jsx";
 import "./App.css";
 
 import { Link } from "react-router-dom";
@@ -324,7 +326,9 @@ function App() {
           <Route index element={<DashboardHome />} />
           <Route path="challenges" element={<ChallengeGenerator />} />
           <Route path="roadmaps" element={<RoadmapsPage />} />
+          <Route path="roadmaps/:id" element={<RoadmapDetail />} />
           <Route path="progress" element={<ProgressPage />} />
+          <Route path="ai-chat" element={<AIChatPage />} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>
       </Routes>

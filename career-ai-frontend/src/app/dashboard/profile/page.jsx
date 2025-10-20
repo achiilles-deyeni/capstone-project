@@ -1,3 +1,6 @@
+import React, { useEffect, useState } from "react";
+import { useUser } from "@clerk/clerk-react";
+import API from "@/services/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -12,202 +15,263 @@ import {
 } from "lucide-react";
 
 export default function ProfilePage() {
+  const { user } = useUser();
+
+  const [profile, setProfile] = useState(null);
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    location: "",
+    joined: "",
+  });
+  const [editing, setEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fullName =
+    user?.fullName ||
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+    user?.username ||
+    "User";
+
+  const email =
+    user?.primaryEmailAddress?.emailAddress ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    "";
+
+  const initials = (fullName || "")
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  useEffect(() => {
+    if (!user) return;
+    let canceled = false;
+    setLoading(true);
+    API.get(`/api/users/${user.id}`)
+      .then((res) => {
+        if (canceled) return;
+        const p = res.data || {};
+        setProfile(p.profile || p);
+        setForm((f) => ({
+          ...f,
+          firstName: (p.profile && p.profile.firstName) || user.firstName || "",
+          lastName: (p.profile && p.profile.lastName) || user.lastName || "",
+          location: (p.profile && p.profile.location) || "",
+          joined: (p.profile && p.profile.joined) || "",
+        }));
+      })
+      .catch((e) => {
+        if (canceled) return;
+        console.error("Failed to load profile", e);
+        setError("Failed to load profile");
+      })
+      .finally(() => {
+        if (!canceled) setLoading(false);
+      });
+    return () => {
+      canceled = true;
+    };
+  }, [user]);
+
+  const save = async () => {
+    if (!user) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await API.put(`/api/users/${user.id}`, { profile: form });
+      setProfile(res.data.profile || res.data);
+      setEditing(false);
+    } catch (e) {
+      console.error("Failed to save profile", e);
+      setError("Failed to save profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-4">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Profile</h1>
-        <p className="text-muted-foreground">
+        <h1 className="h3">Profile</h1>
+        <p className="text-muted">
           Manage your account and view your achievements
         </p>
       </div>
 
-      {/* Profile Card */}
-      <Card className="p-6 bg-card border-border">
-        <div className="flex flex-col md:flex-row gap-6">
-          <Avatar className="h-24 w-24">
-            <AvatarFallback className="bg-accent text-accent-foreground text-3xl">
-              JD
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+      <Card className="p-3">
+        <div className="d-flex flex-column flex-md-row gap-3">
+          <div className="d-flex align-items-start">
+            <Avatar className="me-3" style={{ width: 96, height: 96 }}>
+              <AvatarFallback
+                className="d-flex align-items-center justify-content-center bg-primary text-white fw-bold"
+                style={{ width: 96, height: 96, fontSize: 28 }}
+              >
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+
+          <div className="flex-grow-1">
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-start mb-2">
               <div>
-                <h2 className="text-2xl font-bold text-foreground mb-2">
-                  John Doe
-                </h2>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    <span>john@example.com</span>
+                <div className="fw-bold" style={{ fontSize: 20 }}>
+                  {fullName}
+                </div>
+                <div className="text-muted">{email}</div>
+              </div>
+
+              <div>
+                {!editing ? (
+                  <Button
+                    variant="outline"
+                    className="btn btn-outline-secondary"
+                    onClick={() => setEditing(true)}
+                  >
+                    Edit Profile
+                  </Button>
+                ) : (
+                  <div className="d-flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="btn btn-outline-primary"
+                      onClick={save}
+                      disabled={saving}
+                    >
+                      {saving ? "Saving..." : "Save"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="btn btn-outline-secondary"
+                      onClick={() => setEditing(false)}
+                      disabled={saving}
+                    >
+                      Cancel
+                    </Button>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    <span>San Francisco, CA</span>
+                )}
+              </div>
+            </div>
+
+            <div className="mb-2 text-muted">
+              <div className="d-flex align-items-center gap-2">
+                <Mail size={14} />{" "}
+                <small>
+                  {profile?.location || form.location || "San Francisco, CA"}
+                </small>
+              </div>
+              <div className="d-flex align-items-center gap-2">
+                <Calendar size={14} />{" "}
+                <small>
+                  {profile?.joined || form.joined || "Joined January 2025"}
+                </small>
+              </div>
+            </div>
+
+            {editing && (
+              <div className="mt-3">
+                <div className="row g-2 mb-2">
+                  <div className="col-md-4">
+                    <input
+                      className="form-control"
+                      value={form.firstName}
+                      onChange={(e) =>
+                        setForm({ ...form, firstName: e.target.value })
+                      }
+                      placeholder="First name"
+                    />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>Joined January 2025</span>
+                  <div className="col-md-4">
+                    <input
+                      className="form-control"
+                      value={form.lastName}
+                      onChange={(e) =>
+                        setForm({ ...form, lastName: e.target.value })
+                      }
+                      placeholder="Last name"
+                    />
+                  </div>
+                  <div className="col-md-4">
+                    <input
+                      className="form-control"
+                      value={form.location}
+                      onChange={(e) =>
+                        setForm({ ...form, location: e.target.value })
+                      }
+                      placeholder="Location"
+                    />
                   </div>
                 </div>
+                <div className="mb-2">
+                  <input
+                    className="form-control"
+                    value={form.joined}
+                    onChange={(e) =>
+                      setForm({ ...form, joined: e.target.value })
+                    }
+                    placeholder="Joined date (friendly)"
+                  />
+                </div>
+                {error && <div className="text-danger small">{error}</div>}
               </div>
-              <Button
-                variant="outline"
-                className="border-border text-foreground bg-transparent"
-              >
-                Edit Profile
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Badge
-                variant="secondary"
-                className="bg-accent/10 text-accent border-accent/20"
-              >
-                Frontend Developer
-              </Badge>
-              <Badge
-                variant="secondary"
-                className="bg-muted text-muted-foreground"
-              >
-                React Enthusiast
-              </Badge>
-              <Badge
-                variant="secondary"
-                className="bg-muted text-muted-foreground"
-              >
-                Open Source Contributor
-              </Badge>
+            )}
+
+            <div className="d-flex flex-wrap gap-2 mt-3">
+              <Badge className="bg-light text-dark">Frontend Developer</Badge>
+              <Badge className="bg-light text-dark">React Enthusiast</Badge>
+              <Badge className="bg-light text-dark">Open Source</Badge>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6 bg-card border-border">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-success/10 flex items-center justify-center">
-              <Target className="h-6 w-6 text-success" />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-foreground">3</div>
-              <div className="text-sm text-muted-foreground">
-                Active Roadmaps
+      <div className="row g-3">
+        <div className="col-md-4">
+          <Card className="p-3">
+            <div className="d-flex align-items-center gap-3">
+              <div className="bg-success text-white rounded p-2">
+                <Target size={20} />
+              </div>
+              <div>
+                <div className="fw-bold">3</div>
+                <div className="text-muted small">Active Roadmaps</div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
 
-        <Card className="p-6 bg-card border-border">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-accent" />
+        <div className="col-md-4">
+          <Card className="p-3">
+            <div className="d-flex align-items-center gap-3">
+              <div className="bg-accent text-white rounded p-2">
+                <TrendingUp size={20} />
+              </div>
+              <div>
+                <div className="fw-bold">3,450</div>
+                <div className="text-muted small">Total Points</div>
+              </div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-foreground">3,450</div>
-              <div className="text-sm text-muted-foreground">Total Points</div>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
 
-        <Card className="p-6 bg-card border-border">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-success/10 flex items-center justify-center">
-              <Award className="h-6 w-6 text-success" />
+        <div className="col-md-4">
+          <Card className="p-3">
+            <div className="d-flex align-items-center gap-3">
+              <div className="bg-success text-white rounded p-2">
+                <Award size={20} />
+              </div>
+              <div>
+                <div className="fw-bold">12</div>
+                <div className="text-muted small">Badges Earned</div>
+              </div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-foreground">12</div>
-              <div className="text-sm text-muted-foreground">Badges Earned</div>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
-
-      {/* Skills */}
-      <Card className="p-6 bg-card border-border">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Skills</h2>
-        <div className="flex flex-wrap gap-2">
-          {[
-            "React",
-            "TypeScript",
-            "JavaScript",
-            "HTML",
-            "CSS",
-            "Node.js",
-            "Git",
-            "REST APIs",
-            "Redux",
-            "Next.js",
-            "Tailwind CSS",
-            "Testing",
-          ].map((skill) => (
-            <span
-              key={skill}
-              className="px-3 py-1 rounded-full bg-muted text-foreground text-sm"
-            >
-              {skill}
-            </span>
-          ))}
-        </div>
-      </Card>
-
-      {/* Settings */}
-      <Card className="p-6 bg-card border-border">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Settings</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between py-3 border-b border-border">
-            <div>
-              <div className="font-medium text-foreground">
-                Email Notifications
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Receive updates about your progress
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-border text-foreground bg-transparent"
-            >
-              Configure
-            </Button>
-          </div>
-          <div className="flex items-center justify-between py-3 border-b border-border">
-            <div>
-              <div className="font-medium text-foreground">
-                Privacy Settings
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Control who can see your profile
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-border text-foreground bg-transparent"
-            >
-              Manage
-            </Button>
-          </div>
-          <div className="flex items-center justify-between py-3">
-            <div>
-              <div className="font-medium text-foreground">
-                Account Security
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Password and authentication
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-border text-foreground bg-transparent"
-            >
-              Update
-            </Button>
-          </div>
-        </div>
-      </Card>
     </div>
   );
 }

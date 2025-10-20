@@ -1,13 +1,47 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
-import roadmaps from "@/data/roadmaps.json";
-
-console.debug("roadmaps (module):", roadmaps);
+import API from "@/services/api";
+import { Link } from "react-router-dom";
 
 export default function RoadmapsList() {
-  const items = roadmaps || [];
+  const [items, setItems] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    API.get("/api/roadmaps")
+      .then((res) => {
+        if (mounted) setItems(res.data);
+      })
+      .catch((e) => {
+        console.error("Failed to load roadmaps from API", e);
+        if (mounted) setError("Failed to load roadmaps");
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <div className="container-fluid p-3">
+        <h2 className="h4 mb-3">Roadmaps</h2>
+        <div className="alert alert-danger">{error}</div>
+      </div>
+    );
+  }
+
+  if (!items) {
+    return (
+      <div className="container-fluid p-3">
+        <h2 className="h4 mb-3">Roadmaps</h2>
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
   if (!items.length) {
     return (
@@ -28,14 +62,12 @@ export default function RoadmapsList() {
               <h3 className="h6">{it.title}</h3>
               <p className="small text-muted">{it.summary}</p>
               <div className="d-flex justify-content-end">
-                <a
+                <Link
+                  to={`/dashboard/roadmaps/${it.id}`}
                   className="btn btn-link p-0"
-                  href={it.doc}
-                  target="_blank"
-                  rel="noreferrer"
                 >
                   Read Summary <ArrowRight size={16} />
-                </a>
+                </Link>
               </div>
             </Card>
           </div>

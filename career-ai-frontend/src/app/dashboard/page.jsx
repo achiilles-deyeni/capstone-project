@@ -3,16 +3,29 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Award, Target, TrendingUp, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useUser } from "@clerk/clerk-react";
+import AIWidget from "@/components/AIWidget";
 
 export default function DashboardPage() {
+  const { user } = useUser();
+  const firstName =
+    user?.firstName ||
+    (user?.fullName ? user.fullName.split(" ")[0] : null) ||
+    user?.username ||
+    "User";
+
   return (
     <div className="container-fluid p-4">
       {/* Welcome Section */}
       <div className="mb-4">
-        <h1 className="h3 fw-bold mb-1">Welcome back, John!</h1>
+        <h1 className="h3 fw-bold mb-1">Welcome back, {firstName}!</h1>
         <p className="text-muted">
           Continue your learning journey and achieve your career goals.
         </p>
+      </div>
+
+      <div className="mb-4">
+        <AIWidget prompt={`Suggest a personalized roadmap for ${firstName}`} />
       </div>
 
       {/* Stats Grid */}

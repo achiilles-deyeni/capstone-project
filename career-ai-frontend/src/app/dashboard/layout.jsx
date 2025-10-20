@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, Outlet } from "react-router-dom";
 import {
   Home,
   Map,
@@ -22,6 +22,7 @@ const navigation = [
   { name: "Roadmaps", href: "/dashboard/roadmaps", icon: Map },
   { name: "Challenges", href: "/dashboard/challenges", icon: TrendingUp },
   { name: "Progress", href: "/dashboard/progress", icon: History },
+  { name: "Chat with AI", href: "/dashboard/ai-chat", icon: Target },
   { name: "Profile", href: "/dashboard/profile", icon: User },
 ];
 
@@ -95,19 +96,16 @@ export default function DashboardLayout({ children }) {
                 <UserProfileSummary />
               </SignedIn>
               <SignedOut>
-                <div className="d-flex align-items-center p-2 rounded bg-light">
-                  <div
-                    className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2"
-                    style={{ width: "32px", height: "32px" }}
+                <div className="d-flex gap-2">
+                  <Link
+                    to="/sign-in"
+                    className="btn btn-outline-primary btn-sm"
                   >
-                    <span className="small fw-bold">JD</span>
-                  </div>
-                  <div className="flex-grow-1">
-                    <div className="small fw-medium">John Doe</div>
-                    <div className="text-muted" style={{ fontSize: "0.75rem" }}>
-                      john@example.com
-                    </div>
-                  </div>
+                    Sign In
+                  </Link>
+                  <Link to="/sign-up" className="btn btn-primary btn-sm">
+                    Get Started
+                  </Link>
                 </div>
               </SignedOut>
             </div>
@@ -149,7 +147,9 @@ export default function DashboardLayout({ children }) {
           </header>
 
           {/* Page content */}
-          <main className="p-4">{children}</main>
+          <main className="p-4">
+            <Outlet />
+          </main>
         </div>
 
         {/* Mobile main content */}
@@ -168,7 +168,9 @@ export default function DashboardLayout({ children }) {
               </button>
             </div>
           </header>
-          <main className="p-3">{children}</main>
+          <main className="p-3">
+            <Outlet />
+          </main>
         </div>
       </div>
     </Suspense>
