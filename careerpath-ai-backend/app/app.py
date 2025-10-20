@@ -58,3 +58,9 @@ try:
     app.include_router(users_router)
 except Exception:
     logging.getLogger(__name__).warning("Failed to include users router")
+
+try:
+    from .routes.ai import router as ai_router
+    app.include_router(ai_router)
+except Exception:
+    logging.getLogger(__name__).warning("Failed to include ai router")
