@@ -4,8 +4,10 @@ import time
 import logging
 from typing import Any, Dict
 
-from ..services import ai_generator
-import openai
+# Import the AI generator lazily inside the handler to avoid import-time
+# failures preventing the router from being included (e.g. missing optional
+# provider SDK like `ollama`). This keeps the route registered and returns
+# a clear 503 if the generator cannot be imported at request time.
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 
@@ -58,13 +60,20 @@ async def generate(request: Request, body: AIPrompt):
 
     # call the AI generator (could be slow)
     try:
+        try:
+            # lazy import to avoid import-time dependency failures
+            from ..services import ai_generator  # type: ignore
+        except Exception as imp_exc:
+            logging.getLogger(__name__).exception("AI generator import failed: %s", imp_exc)
+            # Service not configured or missing dependency
+            raise HTTPException(status_code=503, detail="AI generator is unavailable")
+
         result = ai_generator.generate_career_path_with_ai(body.prompt)
-    except openai.RateLimitError as exc:
-        # OpenAI quota/rate limit - return 429 so clients can handle gracefully
-        logging.getLogger(__name__).exception("OpenAI rate limit / quota error: %s", exc)
-        # surface a clear message to the client (safe for dev). In production, avoid leaking provider internals.
-        raise HTTPException(status_code=429, detail=f"OpenAI quota/rate limit: {str(exc)}")
     except Exception as exc:
+        # Any exception during AI generation should be logged and surfaced as 500.
+        # If you have provider-specific exceptions (rate limits) you can inspect
+        # `exc` here and map to 429, but to avoid hard dependency on provider
+        # SDKs we catch generic Exception.
         logging.getLogger(__name__).exception("AI generation failed: %s", exc)
         raise HTTPException(status_code=500, detail="AI generation failed")
 

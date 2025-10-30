@@ -64,3 +64,30 @@ try:
     app.include_router(ai_router)
 except Exception:
     logging.getLogger(__name__).warning("Failed to include ai router")
+
+
+# Log registered routes at startup to help debug missing endpoints
+@app.on_event("startup")
+async def _log_routes_on_startup():
+    logger = logging.getLogger(__name__)
+    try:
+        logger.info("Listing registered routes:")
+        for route in app.routes:
+            methods = getattr(route, "methods", None)
+            # Some route objects are Starlette routing types; show path and methods
+            logger.info("%s %s %s", getattr(route, "name", "-"), getattr(route, "path", "-"), methods)
+    except Exception as e:
+        logger.exception("Failed to list routes: %s", e)
+
+
+# Temporary debug route to list registered paths at runtime
+@app.get("/debug/routes")
+async def _debug_routes():
+    paths = []
+    for route in app.routes:
+        paths.append({
+            "name": getattr(route, "name", None),
+            "path": getattr(route, "path", None),
+            "methods": list(getattr(route, "methods", [])) if getattr(route, "methods", None) else None,
+        })
+    return {"routes": paths}
