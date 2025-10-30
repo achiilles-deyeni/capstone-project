@@ -79,7 +79,7 @@ export default function AIChatPage() {
               onClick={send}
               disabled={loading}
             >
-              {loading ? "Thinking..." : "Send"}
+              {loading ? "..." : "Send"}
             </button>
           </div>
         </div>
