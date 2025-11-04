@@ -1,0 +1,48 @@
+# docker-compose for local development
+# - Builds frontend and backend images from the repo
+# - Maps frontend -> http://localhost:3000, backend -> http://localhost:8000
+# IMPORTANT: Don't commit real secrets. If you have a `.env`, keep it local and
+# set it in the backend service via `env_file` or use docker-compose CLI env vars.
+
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./careerpath-ai-backend
+      dockerfile: Dockerfile
+    image: careerpath-ai-backend:local
+    ports:
+      - "8000:8080" # host:container
+    # Optionally load env vars from a .env inside the backend folder. Keep secrets out of git.
+    env_file:
+      - ./careerpath-ai-backend/.env
+    environment:
+      # Keep fallback enabled for local dev if you don't have a GEMINI key
+      - AI_FALLBACK=1
+      # Example vars (set these in your local .env or in the host env)
+      # - GEMINI_API_KEY=your_key_here
+      # - GEMINI_MODEL=gemini-2.5-flash
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/debug/routes"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./career-ai-frontend
+      dockerfile: Dockerfile
+    image: career-ai-frontend:local
+    ports:
+      - "3000:80" # host:container
+    depends_on:
+      - backend
+    environment:
+      # Point your frontend to the backend service (adjust when deploying)
+      - REACT_APP_API_URL=http://localhost:8000
+    restart: unless-stopped
+
+networks:
+  default:
+    name: careerpath-network
