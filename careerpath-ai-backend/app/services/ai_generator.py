@@ -6,38 +6,38 @@ from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger(__name__)
 
-# Configure via env vars
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY")
+# Configure via env vars for Gemini (Google GenAI)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-# Lazily create the Ollama client to avoid import-time failures when the
-# `ollama` package or network is not available. Use the `host=` argument as
-# expected by the installed `ollama` client to avoid passing `base_url` twice.
+# Lazily create the GenAI client to avoid import-time failures when the
+# `google.genai` package or network is not available.
 _client: Optional[object] = None
-
-DEFAULT_OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gpt-oss:120b-cloud")
 
 
 def _get_client():
+    """Lazily import and return a google.genai Client instance.
+
+    The GenAI client reads the API key from the environment variable
+    `GEMINI_API_KEY` by default; we also set it here if provided.
+    """
     global _client
     if _client is not None:
         return _client
 
     try:
-        # import locally so the module can be imported even when `ollama` is not installed
-        # If an API key is provided via env var configuration, ensure the
-        # underlying ollama.BaseClient can pick it up from the environment.
-        if OLLAMA_API_KEY:
-            os.environ["OLLAMA_API_KEY"] = OLLAMA_API_KEY
+        # If the user provided a GEMINI_API_KEY env var, ensure it's available
+        # to the library at import/initialization time.
+        if GEMINI_API_KEY:
+            os.environ["GEMINI_API_KEY"] = GEMINI_API_KEY
 
-        from ollama import Client  # type: ignore
+        # import lazily so this module can be imported without google-genai
+        from google import genai  # type: ignore
 
-        # The ollama.Client expects a `host=` parameter (not `base_url=`).
-        _client = Client(host=OLLAMA_BASE_URL)
+        _client = genai.Client()
         return _client
     except Exception as exc:
-        logger.exception("Failed to initialize Ollama client: %s", exc)
-        # Re-raise so callers can map to a 503 or similar
+        logger.exception("Failed to initialize GenAI (Gemini) client: %s", exc)
         raise
 
 
@@ -64,7 +64,7 @@ def _normalize_keys(d: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def generate_career_path_with_ai(prompt: str = "Generate a comprehensive roadmap for the selected career") -> Dict[str, Any]:
-    """Generate a structured career roadmap using the Ollama chat API.
+    """Generate a structured career roadmap using the Google GenAI (Gemini) API.
 
     Returns a dict with normalized keys (snake_case). Raises on any error.
     """
@@ -75,77 +75,39 @@ def generate_career_path_with_ai(prompt: str = "Generate a comprehensive roadmap
     )
 
     try:
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt},
-        ]
+        # Build a single prompt: system guidance followed by the user prompt
+        combined_prompt = system_prompt + "\n\nUser: " + prompt
 
-        # Collect streaming output from Ollama (safer for long responses)
-        content = ""
         try:
-            try:
-                client = _get_client()
-            except Exception as e:
-                # If enabled, return a canned fallback response for local frontend/dev testing
-                if os.getenv("AI_FALLBACK", "0") == "1":
-                    logger.warning("Ollama unavailable, returning fallback AI response: %s", e)
-                    return {
-                        "title": "Sample Career: Software Engineer",
-                        "explanation": "A software engineer builds and maintains software systems. This is a sample response used while the AI backend is unavailable.",
-                        "average_salary": "70,000 - 120,000",
-                        "youtube_video_recommendation": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                        "learning_resources": [
-                            {"title": "Learn Python", "url": "https://docs.python.org/3/tutorial/", "type": "article"},
-                            {"title": "Intro to CS - course", "url": "https://www.coursera.org/", "type": "course"}
-                        ],
-                    }
-                # otherwise re-raise so that callers can return a 503
-                raise
-            for part in client.chat(DEFAULT_OLLAMA_MODEL, messages=messages, stream=True):
-                # expected shape: {'message': {'role': 'assistant', 'content': '...'}}
-                if not part:
-                    continue
-                # part may be a dict; defensively extract nested fields
-                piece = None
-                if isinstance(part, dict):
-                    # try nested accesses
-                    msg = part.get("message") or part.get("choices")
-                    if isinstance(msg, dict):
-                        piece = msg.get("content")
-                    elif isinstance(msg, list) and len(msg) > 0:
-                        # choices like [{'message': {...}}]
-                        try:
-                            piece = msg[0].get("message", {}).get("content")
-                        except Exception:
-                            piece = None
-                    else:
-                        # fallback: try direct content
-                        piece = part.get("content")
-                else:
-                    # non-dict chunk (string) — append directly
-                    try:
-                        piece = str(part)
-                    except Exception:
-                        piece = None
+            client = _get_client()
+        except Exception as e:
+            if os.getenv("AI_FALLBACK", "0") == "1":
+                logger.warning("GenAI unavailable, returning fallback AI response: %s", e)
+                return {
+                    "title": "Sample Career: Software Engineer",
+                    "explanation": "A software engineer builds and maintains software systems. This is a sample response used while the AI backend is unavailable.",
+                    "average_salary": "70,000 - 120,000",
+                    "youtube_video_recommendation": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "learning_resources": [
+                        {"title": "Learn Python", "url": "https://docs.python.org/3/tutorial/", "type": "article"},
+                        {"title": "Intro to CS - course", "url": "https://www.coursera.org/", "type": "course"}
+                    ],
+                }
+            raise
 
-                if piece:
-                    content += piece
-        except TypeError:
-            # If the client.chat does not support stream=True here, call it without streaming
-            # Ensure `client` is available (in case the exception came before assignment).
-            if "client" not in locals() or client is None:
-                client = _get_client()
-            resp = client.chat(DEFAULT_OLLAMA_MODEL, messages=messages, stream=False)
-            # resp can be dict-like; try to extract content defensively
-            if isinstance(resp, dict):
-                # common shape: {'message': {'content': '...'}}
-                content = (
-                    resp.get("message", {}).get("content")
-                    or resp.get("choices", [{}])[0].get("message", {}).get("content", "")
-                    or resp.get("content", "")
-                )
-            else:
-                content = str(resp)
+        # Use the GenAI (Gemini) text generation API
+        try:
+            # The google-genai client supports generate_content with a 'contents' argument
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=combined_prompt,
+            )
+            # response.text is the primary convenience property with the generated text
+            content = getattr(response, "text", None) or str(response)
+        except Exception:
+            # Re-raise after logging so the outer except can handle fallback/503
+            logger.exception("GenAI model request failed")
+            raise
 
         if not content:
             raise ValueError("No content returned from model")
