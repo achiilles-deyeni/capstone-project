@@ -1,3 +1,32 @@
+# Backend Python dependencies for careerpath-ai
+# Run `python -m pip install -r requirements.txt` in your backend venv to install.
+
+# Core web framework
+fastapi
+
+# Production ASGI server (use with gunicorn in production)
+uvicorn[standard]
+gunicorn
+
+# Google GenAI (Gemini) client — you already installed this during development
+google-genai
+
+# Environment variable loader (optional in production if you use the host's env)
+python-dotenv
+
+# Database / ORM
+SQLAlchemy
+
+# Optional: Clerk backend SDK (import used in code). Install only if you use Clerk.
+# The import in code is `from clerk_backend_api import Clerk` — the package name may vary
+# depending on the Clerk SDK you intend to use. If unsure, remove or comment this line.
+clerk-backend-api
+
+# Optional: markdown support for roadmap rendering (used if available)
+Markdown
+
+# Other useful packages (pydantic is a FastAPI dependency but listed for clarity)
+pydantic
 fastapi
 uvicorn
 python-multipart
