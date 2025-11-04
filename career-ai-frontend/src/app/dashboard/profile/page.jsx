@@ -95,7 +95,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 container-fluid p-3">
       <div>
         <h1 className="h3">Profile</h1>
         <p className="text-muted">
@@ -103,13 +103,14 @@ export default function ProfilePage() {
         </p>
       </div>
 
-      <Card className="p-3">
+      <Card className="container-fluid p-3">
         <div className="d-flex flex-column flex-md-row gap-3">
           <div className="d-flex align-items-start">
-            <Avatar className="me-3" style={{ width: 96, height: 96 }}>
+            {/* Use Avatar size prop and ensure overflow hidden so the avatar is circular */}
+            <Avatar className="me-3" size={96} style={{ overflow: "hidden" }}>
               <AvatarFallback
-                className="d-flex align-items-center justify-content-center bg-primary text-white fw-bold"
-                style={{ width: 96, height: 96, fontSize: 28 }}
+                className="bg-primary text-white fw-bold"
+                style={{ fontSize: 28 }}
               >
                 {initials}
               </AvatarFallback>

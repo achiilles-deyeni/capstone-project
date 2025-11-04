@@ -24,10 +24,15 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  /* Ensure the app can use full width - do not center the root horizontally */
   min-width: 320px;
   min-height: 100vh;
+}
+
+/* Make the root app container span the full viewport width so
+   inner pages can take advantage of Bootstrap container-fluid */
+.app-container {
+  width: 100%;
 }
 
 h1 {

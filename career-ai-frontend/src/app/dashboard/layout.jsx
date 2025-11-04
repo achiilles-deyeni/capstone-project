@@ -28,6 +28,8 @@ const navigation = [
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(3); // demo unread count
   const location = useLocation();
   const pathname = location.pathname;
 
@@ -138,16 +140,61 @@ export default function DashboardLayout({ children }) {
                 </div>
               </div>
 
-              <div>
-                <button className="btn btn-link">
+              <div className="position-relative">
+                <button
+                  className="btn btn-link position-relative"
+                  onClick={() => setNotificationsOpen((s) => !s)}
+                  aria-expanded={notificationsOpen}
+                  aria-label="Notifications"
+                >
                   <Bell size={20} />
+
+                  {unreadCount > 0 && (
+                    <span
+                      className="badge bg-danger text-white position-absolute"
+                      style={{
+                        top: -6,
+                        right: -6,
+                        fontSize: 11,
+                        lineHeight: "12px",
+                        minWidth: 18,
+                        height: 18,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: 9,
+                        padding: "0 5px",
+                      }}
+                      aria-label={`${unreadCount} unread notifications`}
+                    >
+                      {unreadCount}
+                    </span>
+                  )}
                 </button>
+
+                {notificationsOpen && (
+                  <div
+                    className="position-absolute bg-white border rounded shadow p-3"
+                    style={{ right: 0, top: 40, width: 280, zIndex: 1065 }}
+                  >
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <strong>Notifications</strong>
+                      <button
+                        className="btn btn-sm btn-link text-muted p-0"
+                        onClick={() => setNotificationsOpen(false)}
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <div className="small text-muted">No new notifications</div>
+                  </div>
+                )}
               </div>
             </div>
           </header>
 
           {/* Page content */}
-          <main className="p-4">
+          <main className="container-fluid p-4">
             <Outlet />
           </main>
         </div>
@@ -163,12 +210,55 @@ export default function DashboardLayout({ children }) {
                 <Menu size={20} />
               </button>
               <span className="fw-bold">CareerPath</span>
-              <button className="btn btn-link">
+              <button
+                className="btn btn-link position-relative"
+                onClick={() => setNotificationsOpen((s) => !s)}
+                aria-expanded={notificationsOpen}
+                aria-label="Notifications"
+              >
                 <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span
+                    className="badge bg-danger text-white position-absolute"
+                    style={{
+                      top: -6,
+                      right: -6,
+                      fontSize: 11,
+                      lineHeight: "12px",
+                      minWidth: 18,
+                      height: 18,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 9,
+                      padding: "0 5px",
+                    }}
+                    aria-label={`${unreadCount} unread notifications`}
+                  >
+                    {unreadCount}
+                  </span>
+                )}
               </button>
+              {notificationsOpen && (
+                <div
+                  className="position-absolute bg-white border rounded shadow p-3"
+                  style={{ right: 16, top: 64, width: 260, zIndex: 1065 }}
+                >
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <strong>Notifications</strong>
+                    <button
+                      className="btn btn-sm btn-link text-muted p-0"
+                      onClick={() => setNotificationsOpen(false)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                  <div className="small text-muted">No new notifications</div>
+                </div>
+              )}
             </div>
           </header>
-          <main className="p-3">
+          <main className="container-fluid p-3">
             <Outlet />
           </main>
         </div>
