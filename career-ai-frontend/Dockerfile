@@ -1,12 +1,15 @@
 # React (Vite) production Dockerfile
 # Multi-stage: build with Node, serve static assets with nginx
 
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Install dependencies based on package files
 COPY package*.json ./
-RUN npm ci --silent
+# Use `npm install` here so the Docker build reflects package.json edits even if package-lock.json
+# still references removed packages during local iteration. For reproducible builds in CI, prefer
+# keeping package-lock.json in sync and using `npm ci`.
+RUN npm install --silent
 
 # Copy source and build
 COPY . .
