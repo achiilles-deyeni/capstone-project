@@ -33,10 +33,18 @@ app = FastAPI()
 
 # Allow frontend (React + Vite) to access backend
 origins = [
-    "http://localhost:5173",  # Vite dev server
+    "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://your-frontend-domain.vercel.app",  # production domain (optional)
+    "https://learnrite.netlify.app",
+    "https://<your-vercel-domain>.vercel.app"
 ]
+
+import os
+from fastapi.middleware.cors import CORSMiddleware
+
+# prefer ALLOW_ORIGINS env or fallback to a default
+origins_env = os.getenv("ALLOW_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+origins = [o.strip() for o in origins_env.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
@@ -71,6 +79,8 @@ except Exception:
 async def _log_routes_on_startup():
     logger = logging.getLogger(__name__)
     try:
+        # Log resolved CORS origins to help diagnose browser preflight issues
+        logger.info("Resolved CORS allow_origins: %s", origins)
         logger.info("Listing registered routes:")
         for route in app.routes:
             methods = getattr(route, "methods", None)
@@ -91,3 +101,19 @@ async def _debug_routes():
             "methods": list(getattr(route, "methods", [])) if getattr(route, "methods", None) else None,
         })
     return {"routes": paths}
+
+
+@app.get("/debug/ai-status")
+async def _debug_ai_status():
+    """Attempt to initialize the GenAI client and return a short status.
+
+    Useful for debugging credentials or missing SDKs without running a model call.
+    """
+    try:
+        from .services.ai_generator import check_genai_client
+    except Exception as imp:
+        logging.getLogger(__name__).exception("Failed to import ai_generator for debug: %s", imp)
+        return {"ok": False, "message": "Failed to import ai_generator"}
+
+    status = check_genai_client()
+    return status

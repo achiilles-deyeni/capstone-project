@@ -7,7 +7,6 @@ from typing import Dict, Any, List, Optional
 logger = logging.getLogger(__name__)
 
 # Configure via env vars for Gemini (Google GenAI)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 # Lazily create the GenAI client to avoid import-time failures when the
@@ -18,18 +17,19 @@ _client: Optional[object] = None
 def _get_client():
     """Lazily import and return a google.genai Client instance.
 
-    The GenAI client reads the API key from the environment variable
-    `GEMINI_API_KEY` by default; we also set it here if provided.
+    This reads `GEMINI_API_KEY` at call time (not import time) so runtime
+    environment updates (e.g. on hosted services) are respected.
     """
     global _client
     if _client is not None:
         return _client
 
     try:
-        # If the user provided a GEMINI_API_KEY env var, ensure it's available
-        # to the library at import/initialization time.
-        if GEMINI_API_KEY:
-            os.environ["GEMINI_API_KEY"] = GEMINI_API_KEY
+        # Read the key at runtime so we don't depend on import-time envs
+        gemini_key = os.getenv("GEMINI_API_KEY")
+        if gemini_key:
+            # Some SDKs also read the env variable; ensure it's present.
+            os.environ["GEMINI_API_KEY"] = gemini_key
 
         # import lazily so this module can be imported without google-genai
         from google import genai  # type: ignore
@@ -147,3 +147,18 @@ def generate_career_path_with_ai(prompt: str = "Generate a comprehensive roadmap
     except Exception as exc:
         logger.exception("Failed to generate challenge with AI: %s", exc)
         raise
+
+
+def check_genai_client() -> Dict[str, Any]:
+    """Check whether the GenAI client can be initialized.
+
+    Returns a dict describing status: {ok: bool, message: str, model: <model>}
+    This is safe to call from a debug endpoint and helps diagnose missing
+    SDK or credentials without making a model generation request.
+    """
+    try:
+        # attempt to initialize the client; don't reassign on failure
+        _get_client()
+        return {"ok": True, "message": "GenAI client initialized", "model": GEMINI_MODEL}
+    except Exception as exc:
+        return {"ok": False, "message": f"GenAI init failed: {exc}"}
