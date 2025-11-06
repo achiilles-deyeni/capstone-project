@@ -178,8 +178,8 @@ Phase 5 — Testing, deployment, and documentation
 
 ## 🚀 Deployment
 
-1. Deploy frontend to Vercel or Netlify.
-2. Deploy backend to Render or Railway.
+1. Deploy frontend to Netlify.
+2. Deploy backend to Render.
 3. Update frontend API base URL to point to the deployed FastAPI backend.
 
 ---
@@ -195,9 +195,9 @@ Phase 5 — Testing, deployment, and documentation
 
 ## 🧑‍💻 Team & Credits
 
-Developed by: [Your Name]
+Developed by: Achilles Deyeni
 Capstone Project — SDG 8 (Decent Work and Economic Growth)
-Supervised by: [Your Supervisor’s Name]
+Supervised by: Achilles Deyeni
 Institution: [Your University / Department]
 
 ---
