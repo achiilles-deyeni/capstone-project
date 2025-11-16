@@ -4,6 +4,7 @@
 # Core web framework
 fastapi
 pydantic
+pydantic[email]
 
 # Production ASGI server (use with gunicorn in production)
 uvicorn[standard]
@@ -16,7 +17,9 @@ google-genai
 python-dotenv
 
 # Database / ORM
-SQLAlchemy
+SQLAlchemy>=2.0.0
+psycopg2-binary  # PostgreSQL driver
+alembic  # Database migrations
 
 # File upload support
 python-multipart
