@@ -49,7 +49,7 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 # Get allowed origins from environment variable or use defaults
 origins_env = os.getenv(
     "ALLOW_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000"
+    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000,https://careerpath-backend-tc1f.onrender.com"
 )
 
 # Parse origins from comma-separated string

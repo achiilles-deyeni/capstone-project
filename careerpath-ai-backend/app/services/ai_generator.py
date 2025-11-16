@@ -2,6 +2,7 @@ import re
 import logging
 import os
 import json
+import ast
 import threading
 from typing import Dict, Any, List, Optional
 from functools import lru_cache
@@ -31,17 +32,22 @@ def _get_client():
         gemini_key = os.getenv("GEMINI_API_KEY")
         if not gemini_key:
             raise ValueError("GEMINI_API_KEY environment variable not set")
-        
-        # Some SDKs also read the env variable; ensure it's present.
-        os.environ["GEMINI_API_KEY"] = gemini_key
 
         # import lazily so this module can be imported without google-genai
         from google import genai  # type: ignore
 
-        _thread_local.client = genai.Client()
+        # Try to initialize client with explicit key if supported by SDK,
+        # otherwise fall back to default constructor.
+        try:
+            _thread_local.client = genai.Client(api_key=gemini_key)  # type: ignore
+        except TypeError:
+            # Older/newer SDK variants may not accept api_key kwarg
+            _thread_local.client = genai.Client()  # type: ignore
+
         return _thread_local.client
     except Exception as exc:
-        logger.exception("Failed to initialize GenAI (Gemini) client: %s", exc)
+        # Avoid leaking sensitive env values in logs
+        logger.error("Failed to initialize GenAI (Gemini) client: %s", str(exc))
         raise
 
 
@@ -94,11 +100,24 @@ def _extract_json_blob(text: str) -> str:
     if not text:
         return text
     
-    # Remove common fencing like ```json or ```
-    text = re.sub(r"^\s*```(?:json)?\s*\n", "", text, flags=re.IGNORECASE)
-    text = re.sub(r"\n\s*```\s*$", "", text)
-    
-    # Try to find a JSON object
+    # Remove all code fences (```json ... ``` or ```) that commonly wrap model output
+    text = re.sub(r"```(?:json)?[\s\S]*?```", lambda m: m.group(0).replace('```', ''), text, flags=re.IGNORECASE)
+
+    # Attempt to find the first balanced JSON object by scanning for matching braces
+    start = text.find('{')
+    if start == -1:
+        return text
+
+    depth = 0
+    for i in range(start, len(text)):
+        if text[i] == '{':
+            depth += 1
+        elif text[i] == '}':
+            depth -= 1
+            if depth == 0:
+                return text[start:i+1]
+
+    # Fallback to regex if scanning didn't find a balanced object
     m = re.search(r"\{[\s\S]*\}", text)
     return m.group(0) if m else text
 
@@ -110,7 +129,14 @@ def _normalize_keys(d: Dict[str, Any]) -> Dict[str, Any]:
         s = re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', s)
         return re.sub(r"[^0-9a-zA-Z]+", "_", s.strip()).lower().strip('_')
 
-    return {to_snake(k): v for k, v in d.items()}
+    def recurse(obj: Any) -> Any:
+        if isinstance(obj, dict):
+            return {to_snake(k): recurse(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [recurse(i) for i in obj]
+        return obj
+
+    return recurse(d)
 
 
 def _parse_json_safely(blob: str) -> Dict[str, Any]:
@@ -130,30 +156,75 @@ def _parse_json_safely(blob: str) -> Dict[str, Any]:
         return json.loads(blob)
     except json.JSONDecodeError:
         pass
-    
-    # Strategy 2: Fix common issues (unescaped quotes in strings)
+
+    # Strategy 2: Use Python literal eval for Python-like dicts (e.g., single quotes)
     try:
-        # Only replace single quotes that are likely meant as double quotes
-        # This is a heuristic and may not work in all cases
-        fixed = blob.replace("'", '"')
-        result = json.loads(fixed)
-        logger.warning("JSON parsed using single-quote replacement fallback")
-        return result
-    except json.JSONDecodeError:
+        parsed = ast.literal_eval(blob)
+        if isinstance(parsed, dict):
+            logger.warning("JSON parsed using ast.literal_eval fallback")
+            return parsed
+    except Exception:
         pass
-    
+
     # Strategy 3: Try to extract just the object part more aggressively
     try:
-        # Find content between outermost braces
         match = re.search(r'\{(?:[^{}]|(?:\{[^{}]*\}))*\}', blob, re.DOTALL)
         if match:
             return json.loads(match.group(0))
     except (json.JSONDecodeError, AttributeError):
         pass
-    
+
     # All strategies failed
-    logger.error("Failed to parse JSON blob: %s", blob[:500])
+    logger.error("Failed to parse JSON blob (first 500 chars): %s", blob[:500])
     raise json.JSONDecodeError("Unable to parse model response as JSON", blob, 0)
+
+
+def _extract_text_from_response(response: Any) -> str:
+    """Extract textual content from a variety of possible model response shapes.
+
+    Many SDKs return different structures (attributes or dicts). Try common
+    locations without raising.
+    """
+    # Direct text attribute
+    if response is None:
+        return ""
+
+    # Common attributes
+    for attr in ("text", "content", "output", "result"):
+        if hasattr(response, attr):
+            val = getattr(response, attr)
+            if isinstance(val, str) and val:
+                return val
+            # Some SDKs return objects with a text field
+            if hasattr(val, "text") and isinstance(getattr(val, "text"), str):
+                return getattr(val, "text")
+
+    # If it's a dict-like response
+    try:
+        if isinstance(response, dict):
+            # Common keys
+            for key in ("text", "content", "output", "result", "candidates", "choices"):
+                if key in response:
+                    v = response[key]
+                    if isinstance(v, str):
+                        return v
+                    if isinstance(v, list) and v:
+                        first = v[0]
+                        if isinstance(first, str):
+                            return first
+                        if isinstance(first, dict):
+                            # candidate content
+                            for kk in ("text", "content", "output"):
+                                if kk in first and isinstance(first[kk], str):
+                                    return first[kk]
+    except Exception:
+        pass
+
+    # Try stringifying as a last resort
+    try:
+        return str(response)
+    except Exception:
+        return ""
 
 
 @lru_cache(maxsize=100)

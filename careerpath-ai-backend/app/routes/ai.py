@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field, validator
 import time
+import hashlib
 import logging
 from typing import Any, Dict, Optional, Tuple
 from collections import defaultdict
@@ -221,8 +222,10 @@ async def generate(
     ip = _get_client_ip(request)
     now = time.time()
     
-    logger.info("Received AI generation request from IP: %s, prompt: %s", 
-               ip, body.prompt[:100])
+    # Avoid logging user prompt plaintext (may contain PII). Log a short hash and length instead.
+    prompt_hash = hashlib.sha256(body.prompt.encode('utf-8')).hexdigest()[:8]
+    logger.info("Received AI generation request from IP: %s, prompt_hash: %s, prompt_len: %d", 
+               ip, prompt_hash, len(body.prompt))
     
     # Rate limiting check
     if _check_rate_limit(ip, now):

@@ -361,7 +361,7 @@ export default function AIChatPage() {
       </Card>
 
       {/* Typing Indicator CSS */}
-      <style jsx>{`
+      <style>{`
         .typing-indicator {
           display: flex;
           gap: 4px;
