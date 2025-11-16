@@ -11,6 +11,9 @@ logger = logging.getLogger(__name__)
 # Load environment variables from .env if present
 load_dotenv()
 
+# Import database functions
+from .database import create_tables, check_database_connection
+
 # Try to import Clerk SDK; if it's not installed, continue without it.
 try:
     from clerk_backend_api import Clerk
@@ -127,12 +130,14 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Detailed health check endpoint"""
+    db_connected = check_database_connection()
     return {
-        "status": "healthy",
+        "status": "healthy" if db_connected else "degraded",
         "environment": ENVIRONMENT,
         "cors_enabled": True,
         "allowed_origins_count": len(origins),
-        "clerk_enabled": clerk_sdk is not None
+        "clerk_enabled": clerk_sdk is not None,
+        "database_connected": db_connected
     }
 
 # =======================
@@ -140,12 +145,23 @@ async def health_check():
 # =======================
 
 @app.on_event("startup")
-async def _log_routes_on_startup():
-    """Log registered routes at startup to help debug missing endpoints"""
+async def _startup():
+    """Initialize database and log routes on startup"""
     try:
         logger.info("=" * 60)
         logger.info("Career Path AI API Starting Up")
         logger.info("=" * 60)
+        
+        # Initialize database
+        logger.info("Initializing database...")
+        create_tables()
+        
+        # Check database connection
+        if check_database_connection():
+            logger.info("✓ Database ready")
+        else:
+            logger.warning("⚠ Database connection issue - check DATABASE_URL")
+        
         logger.info(f"Environment: {ENVIRONMENT}")
         logger.info(f"CORS Origins: {origins}")
         logger.info(f"Clerk SDK: {'Enabled' if clerk_sdk else 'Disabled'}")
