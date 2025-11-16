@@ -7,8 +7,8 @@ for FastAPI routes.
 """
 import os
 import logging
-from sqlalchemy import create_engine, Session
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 from typing import Generator
 from datetime import datetime, timedelta
