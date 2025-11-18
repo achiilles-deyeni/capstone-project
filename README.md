@@ -50,16 +50,16 @@ Frontend:
 Backend:
 
 - FastAPI
-- PostgreSQL or MongoDB
-- SQLAlchemy or Motor
-- OpenAI or Hugging Face API
+- PostgreSQL
+- SQLAlchemy
+- GeminiAI
 - Pydantic
 
 Hosting:
 
-- Frontend: Vercel or Netlify
-- Backend: Render or Railway
-- Database: Supabase, Neon, or MongoDB Atlas
+- Frontend: Netlify
+- Backend: Render
+- Database: Render
 
 ---
 
@@ -178,9 +178,8 @@ Phase 5 — Testing, deployment, and documentation
 
 ## 🚀 Deployment
 
-1. Deploy frontend to Netlify.
-2. Deploy backend to Render.
-3. Update frontend API base URL to point to the deployed FastAPI backend.
+1. Deploy frontend to Netlify. URl: https://learnrite.netlify.app
+2. Deploy backend to Render. URL: https://learnrite.onrender.com
 
 ---
 
@@ -198,7 +197,7 @@ Phase 5 — Testing, deployment, and documentation
 Developed by: Achilles Deyeni
 Capstone Project — SDG 8 (Decent Work and Economic Growth)
 Supervised by: Achilles Deyeni
-Institution: [Your University / Department]
+Institution: University of Mines and Technology
 
 ---
 
